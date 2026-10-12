@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Love Chess ♡</title>
+<style>
+:root{--pink:#f28ab2;--deep:#d94f88;--pale:#fff0f6;--white:#fffdfd;--ink:#71364f;--tile1:#fff8fb;--tile2:#f4a9c6}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:var(--ink);background:radial-gradient(circle at top left,#ffe4ef,transparent 42%),linear-gradient(135deg,#fff8fb,#ffd8e8);display:flex;justify-content:center;align-items:center;padding:22px;overflow-x:hidden}
+body:before{content:"♡  ♥  ♡  ♥  ♡";position:fixed;inset:0;display:flex;align-items:center;justify-content:space-around;color:#e77ca8;opacity:.12;font-size:clamp(28px,6vw,70px);pointer-events:none;transform:rotate(-18deg);letter-spacing:20px}
+.app{position:relative;width:min(100%,920px);background:#ffffffd9;border:2px solid #fff;box-shadow:0 20px 60px #b94e7b24;border-radius:28px;padding:clamp(16px,3vw,30px);backdrop-filter:blur(8px)}
+header{text-align:center;margin-bottom:18px}
+h1{margin:0;font-size:clamp(28px,5vw,44px);color:var(--deep);letter-spacing:.5px}
+.subtitle{margin:4px 0;color:#a45a79}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 245px;gap:22px;align-items:start}
+.board-wrap{width:100%;max-width:620px;margin:auto;padding:10px;border-radius:18px;background:linear-gradient(135deg,#f8a5c5,#fff);box-shadow:0 8px 22px #d94f8824}
+.board{display:grid;grid-template-columns:repeat(8,1fr);aspect-ratio:1;border:2px solid #fff;border-radius:10px;overflow:hidden}
+.square{border:0;position:relative;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;min-width:0;aspect-ratio:1;font-family:Georgia,serif;line-height:1;transition:filter .12s}
+.square.light{background:var(--tile1)}.square.dark{background:var(--tile2)}
+.square:hover{filter:brightness(1.04)}
+.square.selected{box-shadow:inset 0 0 0 4px #d94f88}
+.square.last{background-image:linear-gradient(#ffdfeb80,#ffdfeb80)}
+.square.legal:after{content:"";width:24%;height:24%;border-radius:50%;background:#c63f7b72;position:absolute}
+.square.legal:has(.piece):after{width:82%;height:82%;background:transparent;border:4px solid #c63f7b;box-sizing:border-box}
+.piece{font-size:clamp(25px,5.6vw,55px);z-index:1;user-select:none;text-shadow:0 2px 1px #5c17301c}
+.piece.white{color:#fff; -webkit-text-stroke:1.1px #c94c82;text-shadow:0 2px 2px #a7386830,0 0 1px #9e285c}
+.piece.black{color:#b83270;text-shadow:0 2px 1px #6d174130}
+.coord{position:absolute;font:10px system-ui;color:#9e5472;left:4px;top:3px;opacity:.75}
+.panel{background:#fff7fb;border:1px solid #f8c8db;border-radius:20px;padding:16px}
+.turn{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid #f6c4d8;border-radius:14px;padding:12px;margin-bottom:12px}
+.turn-icon{font-size:28px}.turn strong{display:block}.turn small{color:#a76c85}
+.status{font-size:14px;min-height:42px;line-height:1.5;margin:12px 0;color:#8a4664}
+.buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+button.action{border:0;border-radius:12px;padding:10px 8px;background:#f7c0d6;color:#7b2e50;font-weight:700;cursor:pointer}
+button.action.primary{background:var(--deep);color:white;grid-column:span 2}
+button.action:hover{filter:brightness(.97);transform:translateY(-1px)}
+.history-title{font-weight:800;margin:18px 0 8px}
+.history{max-height:180px;overflow:auto;background:white;border-radius:12px;padding:10px;font-size:13px;line-height:1.8}
+.history span{display:inline-block;min-width:24px;color:#bd6990;font-weight:700}
+.note{font-size:12px;color:#a36a82;margin-top:12px;line-height:1.5}
+.promotion{display:none;position:absolute;inset:0;background:#71364f88;z-index:5;align-items:center;justify-content:center;border-radius:28px}
+.promotion.open{display:flex}
+.promo-card{background:#fff7fb;border-radius:20px;padding:20px;text-align:center;box-shadow:0 10px 35px #6d174144}
+.promo-options{display:flex;gap:8px;margin-top:12px}.promo-options button{font-size:34px;background:#f9d2e2;border:0;border-radius:10px;padding:8px 12px;cursor:pointer}
+footer{text-align:center;font-size:12px;color:#b06a88;margin-top:16px}
+@media(max-width:700px){body{padding:10px}.layout{grid-template-columns:1fr}.panel{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}.turn,.status,.buttons,.history-title,.history,.note{grid-column:1/-1}.board-wrap{max-width:560px}.piece{font-size:clamp(25px,8vw,48px)}}
+</style>
+</head>
+<body>
+<main class="app">
+<header><h1>Love Chess <span aria-hidden="true">♡</span></h1><p class="subtitle">A little checkmate, a lot of love 💗</p></header>
+<div class="layout">
+  <section class="board-wrap"><div id="board" class="board" aria-label="Papan catur"></div></section>
+  <aside class="panel">
+    <div class="turn"><div class="turn-icon" id="turnIcon">🤍</div><div><strong id="turnName">Giliran Putih</strong><small id="turnHint">Pemain 1 · Putih</small></div></div>
+    <div id="status" class="status" aria-live="polite">Pilih bidak, lalu pilih kotak tujuan yang ditandai.</div>
+    <div class="buttons">
+      <button class="action primary" id="newGame">♡ Mulai Ulang</button>
+      <button class="action" id="undo">↶ Undo</button>
+      <button class="action" id="flip">⇅ Putar Papan</button>
+    </div>
+    <div class="history-title">💌 Riwayat langkah</div><div class="history" id="history">Belum ada langkah. Let the love begin! ♡</div>
+    <p class="note">Dua pemain bergantian di perangkat yang sama. Klik bidak untuk melihat langkah yang legal. Aturan catur standar, termasuk rokade, en passant, promosi pion, dan skakmat.</p>
+  </aside>
+</div>
+<div class="promotion" id="promotion"><div class="promo-card"><strong>Promosi pion 💖</strong><p>Pilih bidak baru:</p><div class="promo-options" id="promoOptions"></div></div></div>
+<footer>Made with ♡ · Pink & White Valentine Edition</footer>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script>
+(() => {
+ const boardEl=document.getElementById('board'), statusEl=document.getElementById('status'), historyEl=document.getElementById('history');
+ const game=new Chess(); let selected=null, legal=[], flipped=false, lastMove=null, pendingPromotion=null;
+ const symbols={wk:'♔',wq:'♕',wr:'♖',wb:'♗',wn:'♘',wp:'♙',bk:'♚',bq:'♛',br:'♜',bb:'♝',bn:'♞',bp:'♟'};
+ const files='abcdefgh';
+ function render(){
+   boardEl.innerHTML='';
+   const board=game.board();
+   for(let ri=0;ri<8;ri++)for(let ci=0;ci<8;ci++){
+     const r=flipped?7-ri:ri, c=flipped?7-ci:ci, sq=files[c]+(8-r), piece=board[r][c];
+     const btn=document.createElement('button'); btn.className='square '+((r+c)%2?'dark':'light'); btn.dataset.square=sq; btn.setAttribute('aria-label',sq);
+     if(lastMove&&(sq===lastMove.from||sq===lastMove.to))btn.classList.add('last');
+     if(sq===selected)btn.classList.add('selected');
+     if(legal.some(m=>m.to===sq))btn.classList.add('legal');
+     if((c===0&&!flipped)||(c===7&&flipped)){const co=document.createElement('span');co.className='coord';co.textContent=8-r;btn.appendChild(co)}
+     if((r===7&&!flipped)||(r===0&&flipped)){const co=document.createElement('span');co.className='coord';co.style.left='auto';co.style.right='4px';co.style.top='auto';co.style.bottom='2px';co.textContent=files[c];btn.appendChild(co)}
+     if(piece){const sp=document.createElement('span');sp.className='piece '+(piece.color==='w'?'white':'black');sp.textContent=symbols[piece.color+piece.type];btn.appendChild(sp)}
+     btn.addEventListener('click',()=>clickSquare(sq)); boardEl.appendChild(btn);
+   }
+   document.getElementById('turnIcon').textContent=game.turn()==='w'?'🤍':'💗';
+   document.getElementById('turnName').textContent=game.turn()==='w'?'Giliran Putih':'Giliran Pink';
+   document.getElementById('turnHint').textContent=game.turn()==='w'?'Pemain 1 · Putih':'Pemain 2 · Pink';
+   renderStatus(); renderHistory();
+ }
+ function renderStatus(){
+   let s='';
+   if(game.in_checkmate())s='Skakmat! '+(game.turn()==='w'?'Pink':'Putih')+' menang! 💘';
+   else if(game.in_draw())s='Permainan seri. Tetap bestie ya! ♡';
+   else if(game.in_stalemate())s='Remis karena stalemate.';
+   else if(game.in_check())s='Skak! Lindungi rajamu ya 💓';
+   else s='Pilih bidak, lalu pilih kotak tujuan yang ditandai.';
+   statusEl.textContent=s;
+ }
+ function renderHistory(){
+   const h=game.history(); if(!h.length){historyEl.textContent='Belum ada langkah. Let the love begin! ♡';return}
+   historyEl.innerHTML='';
+   for(let i=0;i<h.length;i+=2){const row=document.createElement('div');const n=document.createElement('span');n.textContent=(i/2+1)+'.';row.appendChild(n);row.append(' '+h[i]+'   '+(h[i+1]||''));historyEl.appendChild(row)}
+   historyEl.scrollTop=historyEl.scrollHeight;
+ }
+ function clickSquare(sq){
+   if(game.game_over()||pendingPromotion)return;
+   if(selected&&legal.some(m=>m.to===sq)){
+     const moves=legal.filter(m=>m.to===sq);
+     if(moves.length>1||moves.some(m=>m.flags.includes('p'))){showPromotion(selected,sq);return}
+     makeMove(selected,sq);return;
+   }
+   const p=game.get(sq);
+   if(p&&p.color===game.turn()){selected=sq;legal=game.moves({square:sq,verbose:true});}
+   else{selected=null;legal=[]}
+   render();
+ }
+ function makeMove(from,to,promotion='q'){
+   const move=game.move({from,to,promotion});
+   selected=null;legal=[];
+   if(move)lastMove={from:move.from,to:move.to};
+   render();
+ }
+ function showPromotion(from,to){
+   pendingPromotion={from,to}; const opts=document.getElementById('promoOptions');opts.innerHTML='';
+   ['q','r','b','n'].forEach(t=>{const b=document.createElement('button');b.textContent=symbols[game.turn()+t];b.title=({q:'Ratu',r:'Benteng',b:'Gajah',n:'Kuda'})[t];b.onclick=()=>{document.getElementById('promotion').classList.remove('open');const p=pendingPromotion;pendingPromotion=null;makeMove(p.from,p.to,t)};opts.appendChild(b)});
+   document.getElementById('promotion').classList.add('open');
+ }
+ document.getElementById('newGame').onclick=()=>{game.reset();selected=null;legal=[];lastMove=null;pendingPromotion=null;document.getElementById('promotion').classList.remove('open');render()};
+ document.getElementById('undo').onclick=()=>{const m=game.undo();if(m){lastMove=null;selected=null;legal=[];render()}};
+ document.getElementById('flip').onclick=()=>{flipped=!flipped;render()};
+ render();
+})();
+</script>
+</body>
+</html>
